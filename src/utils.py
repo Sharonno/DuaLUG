@@ -1,3 +1,9 @@
+# -*- coding: utf-8 -*-
+# @Author: shang
+# @Date:   2020-07-25
+# @Last Modified by:   shang
+# @Last Modified time: 2020-07-25
+
 import time
 import os
 import numpy as np
@@ -7,55 +13,55 @@ import re
 import nltk
 from nltk.translate.bleu_score import SmoothingFunction
 from text_token import _UNK, _PAD, _BOS, _EOS
-from sumeval.metrics.rouge import RougeCalculator
 from sklearn.metrics import f1_score
+# from sumeval.metrics.rouge import RougeCalculator
 
-rouge = RougeCalculator(stopwords=True, lang="en")
-smoothing = SmoothingFunction()
+# rouge = RougeCalculator(stopwords=True, lang="en")
+# smoothing = SmoothingFunction()
 
-# Checker
-def check_dir(dir_path):
-    '''
-    ans = input(
-            "Are you going to delete all old files in {} ? [y/n] (y) "
-            .format(dir_path))
-    if ans == 'n':
-        exit()
-    else:
-    '''
-    '''
-    files = glob.glob(os.path.join(dir_path, "*"))
-    for f in files:
-        os.remove(f)
-    '''
-    pass
+# # Checker
+# def check_dir(dir_path):
+#     '''
+#     ans = input(
+#             "Are you going to delete all old files in {} ? [y/n] (y) "
+#             .format(dir_path))
+#     if ans == 'n':
+#         exit()
+#     else:
+#     '''
+#     '''
+#     files = glob.glob(os.path.join(dir_path, "*"))
+#     for f in files:
+#         os.remove(f)
+#     '''
+#     pass
 
-def check_usage():
-    output = subprocess.check_output(
-            'nvidia-smi --query-gpu=memory.free --format=csv | tail -1',
-            shell=True)
-    free_mem = int(output.decode("utf-8").split(' ')[0])
-    unit = output.decode("utf-8").split(' ')[1].strip()
-    print_time_info("Free memory: {} {}".format(free_mem, unit))
+# def check_usage():
+#     output = subprocess.check_output(
+#             'nvidia-smi --query-gpu=memory.free --format=csv | tail -1',
+#             shell=True)
+#     free_mem = int(output.decode("utf-8").split(' ')[0])
+#     unit = output.decode("utf-8").split(' ')[1].strip()
+#     print_time_info("Free memory: {} {}".format(free_mem, unit))
 
 
-def handle_model_dirs(model_dir, log_dir, dir_name, replace_model, is_load):
-    if not replace_model:
-        model_dir = os.path.join(model_dir, dir_name)
+# def handle_model_dirs(model_dir, log_dir, dir_name, replace_model, is_load):
+#     if not replace_model:
+#         model_dir = os.path.join(model_dir, dir_name)
 
-    if not os.path.isdir(model_dir):
-        os.makedirs(model_dir)
-    else:
-        if not is_load:
-            check_dir(model_dir)
+#     if not os.path.isdir(model_dir):
+#         os.makedirs(model_dir)
+#     else:
+#         if not is_load:
+#             check_dir(model_dir)
 
-    log_dir = os.path.join(log_dir, dir_name)
+#     log_dir = os.path.join(log_dir, dir_name)
 
-    if not os.path.isdir(log_dir):
-        os.makedirs(log_dir)
-        os.makedirs(os.path.join(log_dir, "validation"))
+#     if not os.path.isdir(log_dir):
+#         os.makedirs(log_dir)
+#         os.makedirs(os.path.join(log_dir, "validation"))
 
-    return model_dir, log_dir
+#     return model_dir, log_dir
 
 
 # Time
@@ -73,300 +79,300 @@ def print_time_info(string):
         Y, M, D, h, m, s, _string))
 
 
-def print_curriculum_status(layer):
-    print("###################################")
-    print("#    CURRICULUM STATUS: LAYER{}    #".format(layer))
-    print("###################################")
+# def print_curriculum_status(layer):
+#     print("###################################")
+#     print("#    CURRICULUM STATUS: LAYER{}    #".format(layer))
+#     print("###################################")
 
 
-# Metric helper
-class SequenceScorer:
-    def __init__(self):
-        self.clear()
+# # Metric helper
+# class SequenceScorer:
+#     def __init__(self):
+#         self.clear()
 
-    def clear(self):
-        self.single_bleu_scores = []
-        self.bleu_scores = []
-        self.single_rouge_scores = []
-        self.rouge_scores = []
-        self.best_rouge_scores = []
+#     def clear(self):
+#         self.single_bleu_scores = []
+#         self.bleu_scores = []
+#         self.single_rouge_scores = []
+#         self.rouge_scores = []
+#         self.best_rouge_scores = []
 
-    def update(self, labels, refs, decode_result):
-        self.single_bleu_scores.extend(single_BLEU(labels, decode_result))
-        self.bleu_scores.extend(BLEU(refs, decode_result))
+#     def update(self, labels, refs, decode_result):
+#         self.single_bleu_scores.extend(single_BLEU(labels, decode_result))
+#         self.bleu_scores.extend(BLEU(refs, decode_result))
 
-        self.single_rouge_scores.extend(single_ROUGE(labels, decode_result))
-        self.rouge_scores.extend(ROUGE(refs, decode_result))
-        self.best_rouge_scores.extend(best_ROUGE(refs, decode_result))
+#         self.single_rouge_scores.extend(single_ROUGE(labels, decode_result))
+#         self.rouge_scores.extend(ROUGE(refs, decode_result))
+#         self.best_rouge_scores.extend(best_ROUGE(refs, decode_result))
 
-    def get_avg_scores(self):
-        avg_single_bleu = np.mean(self.single_bleu_scores)
-        avg_bleu = np.mean(self.bleu_scores)
+#     def get_avg_scores(self):
+#         avg_single_bleu = np.mean(self.single_bleu_scores)
+#         avg_bleu = np.mean(self.bleu_scores)
 
-        avg_single_rouge = np.mean(self.single_rouge_scores, axis=0)
-        avg_rouge = np.mean(self.rouge_scores, axis=0)
-        avg_best_rouge = np.mean(self.best_rouge_scores, axis=0)
+#         avg_single_rouge = np.mean(self.single_rouge_scores, axis=0)
+#         avg_rouge = np.mean(self.rouge_scores, axis=0)
+#         avg_best_rouge = np.mean(self.best_rouge_scores, axis=0)
 
-        return (avg_single_bleu, avg_bleu, avg_single_rouge,
-                avg_rouge, avg_best_rouge)
+#         return (avg_single_bleu, avg_bleu, avg_single_rouge,
+#                 avg_rouge, avg_best_rouge)
 
-    def print_avg_scores(self):
-        avg_single_bleu, avg_bleu, avg_single_rouge, \
-            avg_rouge, avg_best_rouge = self.get_avg_scores()
-        print(f"Average BLEU (single reference): {avg_single_bleu}")
-        print(f"Average BLEU (multiple references): {avg_bleu}")
-        print(f"Average ROUGE (single reference): {avg_single_rouge}")
-        print(f"Average ROUGE (multiple references): {avg_rouge}")
-        print(f"Average Best ROUGE (multiple references): {avg_best_rouge}")
+#     def print_avg_scores(self):
+#         avg_single_bleu, avg_bleu, avg_single_rouge, \
+#             avg_rouge, avg_best_rouge = self.get_avg_scores()
+#         print(f"Average BLEU (single reference): {avg_single_bleu}")
+#         print(f"Average BLEU (multiple references): {avg_bleu}")
+#         print(f"Average ROUGE (single reference): {avg_single_rouge}")
+#         print(f"Average ROUGE (multiple references): {avg_rouge}")
+#         print(f"Average Best ROUGE (multiple references): {avg_best_rouge}")
 
-    def write_avg_scores_to_file(self, fileobj):
-        avg_single_bleu, avg_bleu, avg_single_rouge, \
-            avg_rouge, avg_best_rouge = self.get_avg_scores()
-        fileobj.write("{}\n{}\n{}\n{}\n{}\n".format(
-            avg_single_bleu, avg_bleu,
-            ', '.join(map(str, avg_single_rouge)),
-            ', '.join(map(str, avg_rouge)),
-            ', '.join(map(str, avg_best_rouge))
-        ))
-
-
-class MultilabelScorer:
-    def __init__(self, f1_per_sample=False):
-        self.f1_per_sample = f1_per_sample
-        self.clear()
-
-    def clear(self):
-        self.micro_f1 = []
-        self.weighted_f1 = []
-        # self.samples_f1 = []
-
-    def update(self, labels, prediction):
-        # micro_f1, weighted_f1, samples_f1 = F1(labels, prediction)
-        micro_f1, weighted_f1 = F1(labels, prediction, self.f1_per_sample)
-        if self.f1_per_sample:
-            self.micro_f1.extend(micro_f1)
-            self.weighted_f1.extend(weighted_f1)
-        else:
-            self.micro_f1.append(micro_f1)
-            self.weighted_f1.append(weighted_f1)
-        # self.samples_f1.extend(samples_f1)
-
-    def get_avg_scores(self):
-        avg_micro_f1 = np.mean(self.micro_f1)
-        avg_weighted_f1 = np.mean(self.weighted_f1)
-        # avg_samples_f1 = np.mean(self.samples_f1)
-
-        return (
-            avg_micro_f1,
-            avg_weighted_f1
-        )
-
-    def print_avg_scores(self):
-        # avg_micro_f1, avg_weighted_f1, avg_samples_f1 = self.get_avg_scores()
-        avg_micro_f1, avg_weighted_f1 = self.get_avg_scores()
-        print(f"Average micro f1: {avg_micro_f1}")
-        print(f"Average weighted f1: {avg_weighted_f1}")
-        # print(f"Average samples f1: {avg_samples_f1}")
-
-    def write_avg_scores_to_file(self, fileobj):
-        '''
-        avg_micro_f1, avg_weighted_f1, avg_samples_f1 = self.get_avg_scores()
-        fileobj.write(f"{avg_micro_f1}\n{avg_weighted_f1}\n{avg_samples_f1}\n")
-        '''
-        avg_micro_f1, avg_weighted_f1 = self.get_avg_scores()
-        fileobj.write(f"{avg_micro_f1}\n{avg_weighted_f1}\n")
+#     def write_avg_scores_to_file(self, fileobj):
+#         avg_single_bleu, avg_bleu, avg_single_rouge, \
+#             avg_rouge, avg_best_rouge = self.get_avg_scores()
+#         fileobj.write("{}\n{}\n{}\n{}\n{}\n".format(
+#             avg_single_bleu, avg_bleu,
+#             ', '.join(map(str, avg_single_rouge)),
+#             ', '.join(map(str, avg_rouge)),
+#             ', '.join(map(str, avg_best_rouge))
+#         ))
 
 
-def subseq(seq):
-    # get subseq before the first _EOS token
-    index_list = np.where(seq == _EOS)[0]
-    if len(index_list) > 0:
-        return seq[:index_list[0]]
-    else:
-        return seq
+# class MultilabelScorer:
+#     def __init__(self, f1_per_sample=False):
+#         self.f1_per_sample = f1_per_sample
+#         self.clear()
 
-def micro_f1(y_true, y_pred):
-    tp = ((y_true==1) & (y_pred==1)).sum()
-    fp = ((y_true==0) & (y_pred==1)).sum()
-    fn = ((y_true==1) & (y_pred==0)).sum()
-    if tp == 0:
-        return 0.0
-    recall = tp / (tp+fn)
-    precision = tp / (tp+fp)
-    return 2 * (precision * recall) / (precision + recall)
+#     def clear(self):
+#         self.micro_f1 = []
+#         self.weighted_f1 = []
+#         # self.samples_f1 = []
 
-# NOTE: both labels and prediction should be n-hot vectors
-def F1(labels, prediction, per_sample=False):
-    def F1_per_sample(labels, prediction, average):
-        if average == 'micro':
-            return [
-                micro_f1(label, pred)
-                for label, pred in zip(labels, prediction)
-            ]
-        else:
-            return [
-                f1_score(y_true=np.array([label]), y_pred=np.array([pred]), average=average)
-                for label, pred in zip(labels, prediction)
-            ]
+#     def update(self, labels, prediction):
+#         # micro_f1, weighted_f1, samples_f1 = F1(labels, prediction)
+#         micro_f1, weighted_f1 = F1(labels, prediction, self.f1_per_sample)
+#         if self.f1_per_sample:
+#             self.micro_f1.extend(micro_f1)
+#             self.weighted_f1.extend(weighted_f1)
+#         else:
+#             self.micro_f1.append(micro_f1)
+#             self.weighted_f1.append(weighted_f1)
+#         # self.samples_f1.extend(samples_f1)
 
-    if per_sample:
-        return (
-            F1_per_sample(labels, prediction, average='micro'),
-            F1_per_sample(labels, prediction, average='weighted')
-        )
-    else:
-        return (
-            f1_score(labels, prediction, average='micro'),
-            f1_score(labels, prediction, average='weighted')
-        )
+#     def get_avg_scores(self):
+#         avg_micro_f1 = np.mean(self.micro_f1)
+#         avg_weighted_f1 = np.mean(self.weighted_f1)
+#         # avg_samples_f1 = np.mean(self.samples_f1)
 
+#         return (
+#             avg_micro_f1,
+#             avg_weighted_f1
+#         )
 
-def BLEU(labels, hypothesis):
-    # calculate the average BLEU score, trim paddings in labels
-    bleu_score = [nltk.translate.bleu_score.sentence_bleu(
-            [list(filter(lambda x: x != _PAD and x != _EOS, subseq(r))) for r in refs],
-            list(filter(lambda x: x != _PAD and x != _EOS, subseq(h))),
-            smoothing_function=smoothing.method5
-        )
-        for refs, h in zip(labels, hypothesis)
-    ]
-    return bleu_score
+#     def print_avg_scores(self):
+#         # avg_micro_f1, avg_weighted_f1, avg_samples_f1 = self.get_avg_scores()
+#         avg_micro_f1, avg_weighted_f1 = self.get_avg_scores()
+#         print(f"Average micro f1: {avg_micro_f1}")
+#         print(f"Average weighted f1: {avg_weighted_f1}")
+#         # print(f"Average samples f1: {avg_samples_f1}")
+
+#     def write_avg_scores_to_file(self, fileobj):
+#         '''
+#         avg_micro_f1, avg_weighted_f1, avg_samples_f1 = self.get_avg_scores()
+#         fileobj.write(f"{avg_micro_f1}\n{avg_weighted_f1}\n{avg_samples_f1}\n")
+#         '''
+#         avg_micro_f1, avg_weighted_f1 = self.get_avg_scores()
+#         fileobj.write(f"{avg_micro_f1}\n{avg_weighted_f1}\n")
 
 
-def single_BLEU(labels, hypothesis):
-    # calculate the average BLEU score, trim paddings in labels
-    bleu_score = [nltk.translate.bleu_score.sentence_bleu(
-            [list(filter(lambda x: x != _PAD and x != _EOS, subseq(r)))],
-            list(filter(lambda x: x != _PAD and x != _EOS, subseq(h))),
-            smoothing_function=smoothing.method5
-        )
-        for r, h in np.stack(
-            (labels, hypothesis), axis=1)
-    ]
-    return bleu_score
+# def subseq(seq):
+#     # get subseq before the first _EOS token
+#     index_list = np.where(seq == _EOS)[0]
+#     if len(index_list) > 0:
+#         return seq[:index_list[0]]
+#     else:
+#         return seq
+
+# def micro_f1(y_true, y_pred):
+#     tp = ((y_true==1) & (y_pred==1)).sum()
+#     fp = ((y_true==0) & (y_pred==1)).sum()
+#     fn = ((y_true==1) & (y_pred==0)).sum()
+#     if tp == 0:
+#         return 0.0
+#     recall = tp / (tp+fn)
+#     precision = tp / (tp+fp)
+#     return 2 * (precision * recall) / (precision + recall)
+
+# # NOTE: both labels and prediction should be n-hot vectors
+# def F1(labels, prediction, per_sample=False):
+#     def F1_per_sample(labels, prediction, average):
+#         if average == 'micro':
+#             return [
+#                 micro_f1(label, pred)
+#                 for label, pred in zip(labels, prediction)
+#             ]
+#         else:
+#             return [
+#                 f1_score(y_true=np.array([label]), y_pred=np.array([pred]), average=average)
+#                 for label, pred in zip(labels, prediction)
+#             ]
+
+#     if per_sample:
+#         return (
+#             F1_per_sample(labels, prediction, average='micro'),
+#             F1_per_sample(labels, prediction, average='weighted')
+#         )
+#     else:
+#         return (
+#             f1_score(labels, prediction, average='micro'),
+#             f1_score(labels, prediction, average='weighted')
+#         )
 
 
-def single_ROUGE_1(labels, hypothesis):
-    # use the subseq before the first _EOS token
-    rouge_score = [
-        rouge.rouge_n(
-            references=' '.join([str(i) for i in list(
-                filter(lambda x: x != _PAD and x != _EOS, subseq(r)))]),
-            summary=' '.join([str(i) for i in list(
-                filter(lambda x: x != _PAD and x != _EOS, subseq(h)))]),
-            n=1
-        )
-        for r, h in np.stack((labels, hypothesis), axis=1)
-    ]
-
-    return rouge_score
+# def BLEU(labels, hypothesis):
+#     # calculate the average BLEU score, trim paddings in labels
+#     bleu_score = [nltk.translate.bleu_score.sentence_bleu(
+#             [list(filter(lambda x: x != _PAD and x != _EOS, subseq(r))) for r in refs],
+#             list(filter(lambda x: x != _PAD and x != _EOS, subseq(h))),
+#             smoothing_function=smoothing.method5
+#         )
+#         for refs, h in zip(labels, hypothesis)
+#     ]
+#     return bleu_score
 
 
-def single_ROUGE(labels, hypothesis):
-    # [[rouge_1, rouge_2, rouge_l, rouge_be], ...]
-    # use the subseq before the first _EOS token
-    rouge_score = [
-        [
-            rouge.rouge_n(
-                references=' '.join([str(i) for i in list(
-                    filter(lambda x: x != _PAD and x != _EOS, subseq(r)))]),
-                summary=' '.join([str(i) for i in list(
-                    filter(lambda x: x != _PAD and x != _EOS, subseq(h)))]),
-                n=1
-            ),
-            rouge.rouge_n(
-                references=' '.join([str(i) for i in list(
-                    filter(lambda x: x != _PAD and x != _EOS, subseq(r)))]),
-                summary=' '.join([str(i) for i in list(
-                    filter(lambda x: x != _PAD and x != _EOS, subseq(h)))]),
-                n=2
-            ),
-            rouge.rouge_l(
-                references=' '.join([str(i) for i in list(
-                    filter(lambda x: x != _PAD and x != _EOS, subseq(r)))]),
-                summary=' '.join([str(i) for i in list(
-                    filter(lambda x: x != _PAD and x != _EOS, subseq(h)))])
-            )
-        ]
-        for r, h in np.stack(
-            (labels, hypothesis), axis=1)
-    ]
-
-    return rouge_score
+# def single_BLEU(labels, hypothesis):
+#     # calculate the average BLEU score, trim paddings in labels
+#     bleu_score = [nltk.translate.bleu_score.sentence_bleu(
+#             [list(filter(lambda x: x != _PAD and x != _EOS, subseq(r)))],
+#             list(filter(lambda x: x != _PAD and x != _EOS, subseq(h))),
+#             smoothing_function=smoothing.method5
+#         )
+#         for r, h in np.stack(
+#             (labels, hypothesis), axis=1)
+#     ]
+#     return bleu_score
 
 
-def ROUGE(labels, hypothesis):
-    # [[rouge_1, rouge_2, rouge_l, rouge_be], ...]
-    # use the subseq before the first _EOS token
-    rouge_score = [
-        [
-            rouge.rouge_n(
-                references=[' '.join([str(i) for i in list(
-                    filter(lambda x: x != _PAD and x != _EOS, subseq(r)))])
-                    for r in refs
-                ],
-                summary=' '.join([str(i) for i in list(
-                    filter(lambda x: x != _PAD and x != _EOS, subseq(h)))]),
-                n=1
-            ),
-            rouge.rouge_n(
-                references=[' '.join([str(i) for i in list(
-                    filter(lambda x: x != _PAD and x != _EOS, subseq(r)))])
-                    for r in refs
-                ],
-                summary=' '.join([str(i) for i in list(
-                    filter(lambda x: x != _PAD and x != _EOS, subseq(h)))]),
-                n=2
-            ),
-            rouge.rouge_l(
-                references=[' '.join([str(i) for i in list(
-                    filter(lambda x: x != _PAD and x != _EOS, subseq(r)))])
-                    for r in refs
-                ],
-                summary=' '.join([str(i) for i in list(
-                    filter(lambda x: x != _PAD and x != _EOS, subseq(h)))])
-            )
-        ]
-        for refs, h in zip(labels, hypothesis)
-    ]
+# def single_ROUGE_1(labels, hypothesis):
+#     # use the subseq before the first _EOS token
+#     rouge_score = [
+#         rouge.rouge_n(
+#             references=' '.join([str(i) for i in list(
+#                 filter(lambda x: x != _PAD and x != _EOS, subseq(r)))]),
+#             summary=' '.join([str(i) for i in list(
+#                 filter(lambda x: x != _PAD and x != _EOS, subseq(h)))]),
+#             n=1
+#         )
+#         for r, h in np.stack((labels, hypothesis), axis=1)
+#     ]
 
-    return rouge_score
+#     return rouge_score
 
 
-def best_ROUGE(labels, hypothesis):
-    # [[rouge_1, rouge_2, rouge_l, rouge_be], ...]
-    # use the subseq before the first _EOS token
-    rouge_score = [
-        np.max(
-            [
-                [
-                    rouge.rouge_n(
-                        references=' '.join([str(i) for i in list(
-                            filter(lambda x: x != _PAD and x != _EOS, subseq(r)))]),
-                        summary=' '.join([str(i) for i in list(
-                            filter(lambda x: x != _PAD and x != _EOS, subseq(h)))]),
-                        n=1
-                    ),
-                    rouge.rouge_n(
-                        references=' '.join([str(i) for i in list(
-                            filter(lambda x: x != _PAD and x != _EOS, subseq(r)))]),
-                        summary=' '.join([str(i) for i in list(
-                            filter(lambda x: x != _PAD and x != _EOS, subseq(h)))]),
-                        n=2
-                    ),
-                    rouge.rouge_l(
-                        references=' '.join([str(i) for i in list(
-                            filter(lambda x: x != _PAD and x != _EOS, subseq(r)))]),
-                        summary=' '.join([str(i) for i in list(
-                            filter(lambda x: x != _PAD and x != _EOS, subseq(h)))])
-                    )
-                ]
-                for r in refs
-            ], axis=0)
-        for refs, h in zip(labels, hypothesis)
-    ]
+# def single_ROUGE(labels, hypothesis):
+#     # [[rouge_1, rouge_2, rouge_l, rouge_be], ...]
+#     # use the subseq before the first _EOS token
+#     rouge_score = [
+#         [
+#             rouge.rouge_n(
+#                 references=' '.join([str(i) for i in list(
+#                     filter(lambda x: x != _PAD and x != _EOS, subseq(r)))]),
+#                 summary=' '.join([str(i) for i in list(
+#                     filter(lambda x: x != _PAD and x != _EOS, subseq(h)))]),
+#                 n=1
+#             ),
+#             rouge.rouge_n(
+#                 references=' '.join([str(i) for i in list(
+#                     filter(lambda x: x != _PAD and x != _EOS, subseq(r)))]),
+#                 summary=' '.join([str(i) for i in list(
+#                     filter(lambda x: x != _PAD and x != _EOS, subseq(h)))]),
+#                 n=2
+#             ),
+#             rouge.rouge_l(
+#                 references=' '.join([str(i) for i in list(
+#                     filter(lambda x: x != _PAD and x != _EOS, subseq(r)))]),
+#                 summary=' '.join([str(i) for i in list(
+#                     filter(lambda x: x != _PAD and x != _EOS, subseq(h)))])
+#             )
+#         ]
+#         for r, h in np.stack(
+#             (labels, hypothesis), axis=1)
+#     ]
 
-    return rouge_score
+#     return rouge_score
+
+
+# def ROUGE(labels, hypothesis):
+#     # [[rouge_1, rouge_2, rouge_l, rouge_be], ...]
+#     # use the subseq before the first _EOS token
+#     rouge_score = [
+#         [
+#             rouge.rouge_n(
+#                 references=[' '.join([str(i) for i in list(
+#                     filter(lambda x: x != _PAD and x != _EOS, subseq(r)))])
+#                     for r in refs
+#                 ],
+#                 summary=' '.join([str(i) for i in list(
+#                     filter(lambda x: x != _PAD and x != _EOS, subseq(h)))]),
+#                 n=1
+#             ),
+#             rouge.rouge_n(
+#                 references=[' '.join([str(i) for i in list(
+#                     filter(lambda x: x != _PAD and x != _EOS, subseq(r)))])
+#                     for r in refs
+#                 ],
+#                 summary=' '.join([str(i) for i in list(
+#                     filter(lambda x: x != _PAD and x != _EOS, subseq(h)))]),
+#                 n=2
+#             ),
+#             rouge.rouge_l(
+#                 references=[' '.join([str(i) for i in list(
+#                     filter(lambda x: x != _PAD and x != _EOS, subseq(r)))])
+#                     for r in refs
+#                 ],
+#                 summary=' '.join([str(i) for i in list(
+#                     filter(lambda x: x != _PAD and x != _EOS, subseq(h)))])
+#             )
+#         ]
+#         for refs, h in zip(labels, hypothesis)
+#     ]
+
+#     return rouge_score
+
+
+# def best_ROUGE(labels, hypothesis):
+#     # [[rouge_1, rouge_2, rouge_l, rouge_be], ...]
+#     # use the subseq before the first _EOS token
+#     rouge_score = [
+#         np.max(
+#             [
+#                 [
+#                     rouge.rouge_n(
+#                         references=' '.join([str(i) for i in list(
+#                             filter(lambda x: x != _PAD and x != _EOS, subseq(r)))]),
+#                         summary=' '.join([str(i) for i in list(
+#                             filter(lambda x: x != _PAD and x != _EOS, subseq(h)))]),
+#                         n=1
+#                     ),
+#                     rouge.rouge_n(
+#                         references=' '.join([str(i) for i in list(
+#                             filter(lambda x: x != _PAD and x != _EOS, subseq(r)))]),
+#                         summary=' '.join([str(i) for i in list(
+#                             filter(lambda x: x != _PAD and x != _EOS, subseq(h)))]),
+#                         n=2
+#                     ),
+#                     rouge.rouge_l(
+#                         references=' '.join([str(i) for i in list(
+#                             filter(lambda x: x != _PAD and x != _EOS, subseq(r)))]),
+#                         summary=' '.join([str(i) for i in list(
+#                             filter(lambda x: x != _PAD and x != _EOS, subseq(h)))])
+#                     )
+#                 ]
+#                 for r in refs
+#             ], axis=0)
+#         for refs, h in zip(labels, hypothesis)
+#     ]
+
+#     return rouge_score
 
 
 # Argument helper
@@ -425,24 +431,26 @@ def print_config(args):
     print("\t{}: {}".format("Decoder layers", args.n_layers))
     print("\t{}: {}".format("RNN layers of encoder", args.n_en_layers))
     print("\t{}: {}".format("RNN layers of decoder", args.n_de_layers))
-    print("\t{}: {}".format("Hidden size of encoder RNN", args.en_hidden_size))
-    print("\t{}: {}".format("Hidden size of decoder RNN", args.de_hidden_size))
+    # print("\t{}: {}".format("Hidden size of encoder RNN", args.en_hidden_size)) 无此参数
+    # print("\t{}: {}".format("Hidden size of decoder RNN", args.de_hidden_size)) 无此参数
     print("\t{}: {}".format(
         "Encoder embedding layer", bool(args.en_embedding)))
     if args.en_embedding:
         print("\t{}: {}".format(
             "Shared embedding layer", bool(args.share_embedding)))
     if args.en_embedding and not args.share_embedding:
-        print("\t{}: {}".format(
-            "Encoder embedding dimension", args.en_embedding_dim))
-        print("\t{}: {}".format(
-            "Decoder embedding dimension", args.de_embedding_dim))
+        pass
+        # print("\t{}: {}".format(
+        #     "Encoder embedding dimension", args.en_embedding_dim))
+        # print("\t{}: {}".format(
+        #     "Decoder embedding dimension", args.de_embedding_dim))
     elif not args.en_embedding:
-        print("\t{}: {}".format(
-            "Decoder embedding dimension", args.de_embedding_dim))
+        pass
+        # print("\t{}: {}".format(
+        #     "Decoder embedding dimension", args.de_embedding_dim))
     else:
         print("\t{}: {}".format(
-            "Shared embedding dimension", args.embedding_dim))
+            "embedding dimension", args.embedding_dim))
     print("\t{}: {}".format("Attention method", args.attn_method))
     print("\t{}: {}".format("Bidrectional RNN", bool(args.bidirectional)))
     print("\t{}: {}".format("Batch normalization", bool(args.batch_norm)))

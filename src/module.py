@@ -34,7 +34,9 @@ class Criterion(nn.Module):
                              "use anneal_type='switch'")
         self.LM = LM
         self.MADE = MADE
+        # 二分类交叉熵损失函数
         self.BCE = nn.BCEWithLogitsLoss(reduction='none')
+        # 多分类交叉熵损失函数
         self.CE = nn.CrossEntropyLoss(weight=loss_weight, reduction='none')
         if 'em' in reward_type:
             samples = sum(training_set_label_samples, [])
@@ -163,6 +165,7 @@ class Criterion(nn.Module):
 
     def nlu_score(self, decisions, targets, average):
         device = decisions.device
+        # This is used to move the tensor to cpu(). Some operations on tensors cannot be performed on cuda tensors so you need to move them to cpu first.
         decisions = decisions.detach().cpu().long().numpy()
         targets = targets.detach().cpu().long().numpy()
         scores = [
@@ -234,6 +237,7 @@ class Criterion(nn.Module):
         if self.model == "nlu":
             if supervised:
                 splits = logits.split(split_size=1, dim=1)
+                # 这里n_supervise=1
                 for i in range(n_supervise):
                     sup_loss += self.BCE(splits[i].squeeze(1), targets).mean()
             X = self.get_log_joint_prob_nlu(logits, decisions) if log_joint_prob is None else log_joint_prob
@@ -532,6 +536,7 @@ class NLGRNN(RNNModel):
             output, hidden = self.rnn(curr_input, hidden)
             output = self.linear(output.squeeze(1))
             logits.append(output)
+            # 这里sampling为false
             if sampling:
                 last_output = F.gumbel_softmax(output, hard=True)
             else:

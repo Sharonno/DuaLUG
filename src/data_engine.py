@@ -107,6 +107,8 @@ class DataEngine(Dataset):
         '''
 
     def build_vocab(self):
+        """根据所有的词、槽位:值 建立词汇表
+        """
         if not self.split_vocab:
             corpus = []
             for sent in self.input_data:
@@ -152,7 +154,9 @@ class DataEngine(Dataset):
             # for idx, sent in enumerate(labels):
             for w_idx, word in enumerate(sent):
                 # 4 for special token
-                if word >= self.vocab_size + 4:
+                # if word >= self.vocab_size + 4: # 这里应该写错了，是词对应的索引
+                if not self.tokenizer.vocab.get(word) \
+                    or self.tokenizer.vocab[word] >= self.vocab_size + 4:
                     self.output_labels[idx][w_idx] = _UNK
 
     def crop(self):

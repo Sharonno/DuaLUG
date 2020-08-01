@@ -30,6 +30,16 @@ class Tokenizer:
                 print_time_info("Vocab file doesn't exist...")
 
     def build_vocab(self, corpus, tokens=None):
+        """
+        对于所有词（包含在生成句子(ref)中的，和在输入属性(mr)中的）
+            self.vocab: dict，每个词在词表的索引
+            self.rev_vocab: list of string, 0-3索引对应的是默认词，后面的按照词频由高到低
+        对于只在生成句子(ref)中而不在输入属性(mr)中的词 
+            self.token_vocab:dict 同上
+            self.rev_token_vocab: list 同上
+
+        """
+        # 默认词的索引为0~3
         # You should pass a list with all words in the dataset as corpus
         self.vocab, self.rev_vocab = {}, []
         self.vocab['_UNK'] = len(self.rev_vocab)
@@ -42,6 +52,7 @@ class Tokenizer:
         self.rev_vocab.append('_EOS')
         print_time_info(
                 "Build vocab: {} words".format(len(corpus)))
+        # 统计词频
         raw_vocab = {}
         for word in corpus:
             if word not in raw_vocab:
@@ -102,6 +113,8 @@ class Tokenizer:
                     ], open(self.vocab_path, 'wb'))
 
     def shrink_vocab(self, vocab_size):
+        """根据输入参数限制词表长度
+        """
         special_token = " + _UNK, _BOS, _EOS, _PAD"
         print_time_info(
                 "Shrink vocab size to {}{}".format(vocab_size, special_token))

@@ -1,3 +1,9 @@
+# -*- coding: utf-8 -*-
+# @Author: shang
+# @Date:   2020-07-23
+# @Last Modified by:   shang
+# @Last Modified time: 2020-08-01
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -58,7 +64,7 @@ class Dual:
         self.dir_name = dir_name
         self.model = model
         self.schedule = schedule
-        self.f1_per_sample = f1_per_sample
+        self.f1_per_sample = f1_per_sample #为false
 
         self.device = get_device(device)
 
@@ -228,7 +234,7 @@ class Dual:
               dual_supervised=True,
               primal_reinforce=False,
               dual_reinforce=True):
-
+        # mid_sample_size = 1
         if mid_sample_size > 1 and dual_sample_size > 1:
             raise ValueError("mid_sample_size > 1 and dual_sample_size > 1 "
                              "is not allowed")
@@ -236,6 +242,11 @@ class Dual:
         self.nlu_batches = self.nlg_batches = 0
 
         def train_nlu():
+            """
+            Returns:
+                epoch_nlu_loss: float
+                scorer: MultilabelScorer class
+            """
             epoch_nlu_loss = 0
             batch_amount_nlu = 0
             scorer = MultilabelScorer(f1_per_sample=self.f1_per_sample)
@@ -723,13 +734,16 @@ class Dual:
         logits = self.nlu(inputs)
         prediction = (torch.sigmoid(logits.detach().cpu()) >= 0.5)
         prediction = prediction.clone().numpy()
+        
         if scorer:
             targets_clone = targets.detach().cpu().long().numpy()
             scorer.update(targets_clone, prediction)
 
+        # 使用默认mid_sample_size=1，
         if sample_size > 1:
             samples = self._sample_nlu_output(logits, sample_size)
         else:
+            # 使用hard切断了一些分支的反向传播
             samples = self._st_sigmoid(logits, hard=True).unsqueeze(1)
 
         sup_loss, rl_loss, nlu_joint_prob, reward = criterion(
@@ -761,7 +775,6 @@ class Dual:
             )
         # print(sup_loss, rl_loss)
         return sup_loss + rl_loss, logits, samples, nlu_joint_prob, reward
-        # return sup_loss, logits, samples, nlu_joint_prob, reward
 
     def run_nlu_batch_dual(self, batch, criterion, scorer=None,
                            max_norm=None, joint_prob_other=None,
@@ -808,6 +821,7 @@ class Dual:
                 last_reward=last_reward
             )
         '''
+        # 使用retain_graph=True保持正向计算图不被销毁
         if supervised and isinstance(sup_loss, torch.Tensor):
             sup_loss.backward(retain_graph=has_rl)
         if reinforce and has_rl:
@@ -1029,6 +1043,7 @@ class Dual:
         y_soft = logits.sigmoid()
 
         if hard:
+            # 切断一些分支的反向传播
             # Straight through.
             y_hard = (y_soft >= 0.5).float()
             ret = y_hard - y_soft.detach() + y_soft
